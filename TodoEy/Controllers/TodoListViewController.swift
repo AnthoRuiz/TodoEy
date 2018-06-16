@@ -8,9 +8,11 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
 class TodoListViewController: SwipeTableViewController {
    
+   @IBOutlet weak var searchBar: UISearchBar!
    let realm = try! Realm()
    var todoItems : Results<Item>?
    var selectedCategory : Category? {
@@ -21,6 +23,39 @@ class TodoListViewController: SwipeTableViewController {
    
    override func viewDidLoad() {
       super.viewDidLoad()
+      
+   }
+   
+   override func viewWillAppear(_ animated: Bool) {
+      
+      title = selectedCategory?.name
+      
+      guard let colourHex = selectedCategory?.colour else { fatalError() }
+      
+      updateNavBar(withHexCode: colourHex)
+   }
+   
+   override func viewWillDisappear(_ animated: Bool) {
+      updateNavBar(withHexCode: "1D9BF6")
+   }
+   
+   //MARK: - Nav Bar Setup Methods
+   
+   func updateNavBar(withHexCode colourHexCode: String) {
+      
+      guard let navBar = navigationController?.navigationBar else {
+         fatalError("Navigation Bar does not exist")
+      }
+      
+      guard let navBarColour = UIColor.init(hexString: colourHexCode) else { fatalError() }
+      
+      navBar.barTintColor = navBarColour
+      
+      navBar.tintColor = ContrastColorOf(navBarColour, returnFlat: true)
+      
+      navBar.largeTitleTextAttributes = [NSAttributedStringKey.foregroundColor :  ContrastColorOf(navBarColour, returnFlat: true)]
+      
+      searchBar.barTintColor = navBarColour
       
    }
    
@@ -35,6 +70,13 @@ class TodoListViewController: SwipeTableViewController {
       if let item = todoItems?[indexPath.row] {
          
          cell.textLabel?.text = item.title
+         
+         if let colour = UIColor(hexString : selectedCategory!.colour)?.darken(byPercentage: CGFloat(indexPath.row) / CGFloat(todoItems!.count)) {
+            cell.backgroundColor = colour
+            cell.textLabel?.textColor = ContrastColorOf(colour, returnFlat: true)
+         }
+         
+         print()
          
          /* Ternary operator
           value = condition ? valueIfTrue: valueIfFalse
